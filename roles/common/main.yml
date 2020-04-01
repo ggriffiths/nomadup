@@ -1,0 +1,44 @@
+- name: update
+  yum:
+    name: '*'
+    state: latest
+
+- name: build hosts file
+  lineinfile: dest=/etc/hosts regexp='.*{{ item }}$' line="{{ hostvars[item].ansible_eth1.ipv4.address }} {{item}}" state=present
+  when: hostvars[item].ansible_eth1.ipv4.address is defined
+  with_items: "{{ groups['all'] }}"
+
+- name: disable selinux
+  selinux: state=disabled
+
+- name: disable of selinux - now
+  command: setenforce 0
+
+- name: Run sysctl
+  command: sysctl --system
+
+- name: install utility programs
+  yum: name={{ item }} state=present disable_gpg_check=yes
+  with_items:
+    - wget
+    - ntp
+    - screen
+    - epel-release
+    - vim
+    - iptables
+    - iptables-utils
+    - iptables-services
+    - ncurses-term
+    - docker
+    - consul
+    - curl
+
+- name: turn off swap
+  command: swapoff -a
+
+- name: remove swap from /etc/fstab
+  lineinfile:
+    path: /etc/fstab
+    state: absent
+    regexp: "swap"
+
